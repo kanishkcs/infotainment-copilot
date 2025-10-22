@@ -72,78 +72,50 @@ export default function DashboardPage() {
     }
   }, [transcript]);
 
-  // Get user's current location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setCurrentLocation({ lat: latitude, lng: longitude });
-        },
-        (error) => {
-          console.warn("Geolocation error:", error);
-          // Fallback to San Francisco
-          setCurrentLocation({ lat: 37.7749, lng: -122.4194 });
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000
+  const fetchData = async (location?: {lat: number, lng: number}) => {
+    try {
+      const lat = location?.lat || 37.7749;
+      const lng = location?.lng || -122.4194;
+      
+      const [contextRes, scoreRes, trafficRes] = await Promise.all([
+        fetch("/api/context"),
+        fetch(`/api/driver-score?lat=${lat}&lon=${lng}`),
+        fetch(`/api/traffic?lat=${lat}&lon=${lng}`)
+      ]);
+      
+      if (contextRes.ok) {
+        const contextData = await contextRes.json();
+        if (contextData.ok) {
+          setLiveContext(contextData.data);
         }
-      );
-    } else {
-      // Fallback to San Francisco
-      setCurrentLocation({ lat: 37.7749, lng: -122.4194 });
+      }
+      
+      if (scoreRes.ok) {
+        const scoreData = await scoreRes.json();
+        if (scoreData.success) {
+          setDriverScore(scoreData.data);
+        }
+      }
+      
+      if (trafficRes.ok) {
+        const trafficData = await trafficRes.json();
+        setTrafficInfo(trafficData);
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [contextRes, scoreRes] = await Promise.all([
-          fetch("/api/context"),
-          fetch("/api/driver-score")
-        ]);
-        
-        if (contextRes.ok) {
-          const contextData = await contextRes.json();
-          if (contextData.ok) {
-            setLiveContext(contextData.data);
-          }
-        }
-        
-        if (scoreRes.ok) {
-          const scoreData = await scoreRes.json();
-          if (scoreData.success) {
-            setDriverScore(scoreData.data);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
     fetchData();
   }, []);
 
-  // Fetch traffic data when location changes
+  // Update data when location changes
   useEffect(() => {
     if (currentLocation) {
-      const fetchTrafficData = async () => {
-        try {
-          const trafficRes = await fetch(`/api/traffic?lat=${currentLocation.lat}&lon=${currentLocation.lng}`);
-          if (trafficRes.ok) {
-            const trafficData = await trafficRes.json();
-            setTrafficInfo(trafficData);
-          }
-        } catch (error) {
-          console.error("Failed to fetch traffic data:", error);
-        }
-      };
-      
-      fetchTrafficData();
+      fetchData(currentLocation);
     }
   }, [currentLocation]);
 

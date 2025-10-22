@@ -84,12 +84,12 @@ const Map = ({ onLocationChange }: MapProps) => {
   // Handle location selection
   const handleLocationSelect = (result: any) => {
     const { lat, lon } = result.position;
-    const newLocation = { lat, lng: lon };
+    const location = { lat, lng: lon };
     setSelectedLocation(result);
     setSearchResults([]);
     setSearchQuery(result.address.freeformAddress);
-    setUserLocation(newLocation);
-    onLocationChange?.(newLocation);
+    setUserLocation(location);
+    onLocationChange?.(location);
     
     if (map) {
       map.setCenter([lon, lat]);
@@ -147,9 +147,9 @@ const Map = ({ onLocationChange }: MapProps) => {
       // Add click handler for map
       mapInstance.on('click', (e: any) => {
         const { lng, lat } = e.lngLat;
-        const newLocation = { lat, lng };
-        setUserLocation(newLocation);
-        onLocationChange?.(newLocation);
+        const location = { lat, lng };
+        setUserLocation(location);
+        onLocationChange?.(location);
         
         // Add click marker
         new tt.Marker({ color: '#10b981' })

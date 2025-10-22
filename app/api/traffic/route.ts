@@ -13,16 +13,69 @@ export async function GET(request: Request) {
     const apiKey = process.env.TOMTOM_API_KEY;
     
     if (!apiKey) {
-      // Return enhanced mock traffic data when API key is not configured
-      const trafficLevels = ['Light', 'Moderate', 'Heavy', 'Severe'];
-      const randomLevel = trafficLevels[Math.floor(Math.random() * trafficLevels.length)];
-      const randomDelay = Math.floor(Math.random() * 25) + 1;
-      const confidence = Math.floor(Math.random() * 30) + 70; // 70-100% confidence
+      // Return location-aware mock traffic data when API key is not configured
+      const latNum = parseFloat(lat);
+      const lonNum = parseFloat(lon);
+      
+      // Generate location-based traffic patterns
+      let trafficLevel = 'Light';
+      let travelDelayMinutes = 0;
+      let confidence = 85;
+      let severity = 1;
+      let currentSpeed = 60;
+      let freeFlowSpeed = 60;
+      
+      // Simulate different traffic patterns based on location
+      const locationHash = Math.abs(Math.sin(latNum) * Math.cos(lonNum) * 1000);
+      const timeOfDay = new Date().getHours();
+      
+      // Urban areas (higher lat/lon values) tend to have more traffic
+      if (Math.abs(latNum) > 30 && Math.abs(lonNum) > 30) {
+        if (timeOfDay >= 7 && timeOfDay <= 9) {
+          // Morning rush hour
+          trafficLevel = 'Heavy';
+          travelDelayMinutes = Math.floor(locationHash % 20) + 10;
+          severity = 3;
+          currentSpeed = 25;
+        } else if (timeOfDay >= 17 && timeOfDay <= 19) {
+          // Evening rush hour
+          trafficLevel = 'Heavy';
+          travelDelayMinutes = Math.floor(locationHash % 25) + 15;
+          severity = 3;
+          currentSpeed = 20;
+        } else if (timeOfDay >= 12 && timeOfDay <= 14) {
+          // Lunch time
+          trafficLevel = 'Moderate';
+          travelDelayMinutes = Math.floor(locationHash % 10) + 5;
+          severity = 2;
+          currentSpeed = 40;
+        } else {
+          // Off-peak
+          trafficLevel = 'Light';
+          travelDelayMinutes = Math.floor(locationHash % 5);
+          severity = 1;
+          currentSpeed = 55;
+        }
+      } else {
+        // Rural/suburban areas
+        trafficLevel = 'Light';
+        travelDelayMinutes = Math.floor(locationHash % 3);
+        severity = 1;
+        currentSpeed = 55;
+      }
+      
+      // Add some randomness but keep it location-consistent
+      const randomFactor = Math.floor(locationHash % 5) - 2;
+      travelDelayMinutes = Math.max(0, travelDelayMinutes + randomFactor);
+      currentSpeed = Math.max(10, currentSpeed + randomFactor * 2);
       
       return NextResponse.json({ 
-        trafficLevel: randomLevel, 
-        travelDelayMinutes: randomDelay,
-        confidence: confidence,
+        trafficLevel, 
+        travelDelayMinutes,
+        confidence,
+        severity,
+        currentSpeed,
+        freeFlowSpeed,
         lastUpdated: new Date().toISOString(),
         source: 'mock'
       });

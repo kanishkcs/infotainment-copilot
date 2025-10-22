@@ -91,18 +91,44 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const lat = searchParams.get('lat');
+    const lon = searchParams.get('lon');
 
-    // For demo purposes, generate realistic mock metrics
-    const mockMetrics: DriverMetrics = {
-      hardBrakes: Math.floor(Math.random() * 5), // 0-4 hard brakes
-      smoothAcceleration: 3 + Math.random() * 2, // 3-5 (higher is better)
-      speedCompliance: Math.floor(Math.random() * 8), // 0-7 mph over limit
-      laneDiscipline: Math.floor(Math.random() * 4), // 0-3 lane changes
-      followingDistance: 1 + Math.random() * 3, // 1-4 seconds
-      distractionLevel: Math.floor(Math.random() * 5), // 0-4 distractions
-      tripDuration: 15 + Math.random() * 45, // 15-60 minutes
-      distanceTraveled: 5 + Math.random() * 25 // 5-30 miles
-    };
+    // Generate location-aware mock metrics
+    let mockMetrics: DriverMetrics;
+    
+    if (lat && lon) {
+      // Use location to generate consistent but varied metrics
+      const latNum = parseFloat(lat);
+      const lonNum = parseFloat(lon);
+      const locationSeed = Math.abs(Math.sin(latNum) * Math.cos(lonNum) * 1000);
+      
+      // Urban areas tend to have more challenging driving conditions
+      const isUrban = Math.abs(latNum) > 30 && Math.abs(lonNum) > 30;
+      
+      mockMetrics = {
+        hardBrakes: Math.floor((locationSeed % 5) + (isUrban ? 1 : 0)), // Urban areas have more hard brakes
+        smoothAcceleration: 3 + (locationSeed % 3) + (isUrban ? -0.5 : 0.5), // Rural areas have smoother acceleration
+        speedCompliance: Math.floor((locationSeed % 8) + (isUrban ? 2 : -1)), // Urban areas have more speed violations
+        laneDiscipline: Math.floor((locationSeed % 4) + (isUrban ? 1 : 0)), // Urban areas have more lane changes
+        followingDistance: 1 + (locationSeed % 3) + (isUrban ? 0.5 : -0.5), // Urban areas have shorter following distance
+        distractionLevel: Math.floor((locationSeed % 5) + (isUrban ? 1 : 0)), // Urban areas have more distractions
+        tripDuration: 15 + (locationSeed % 45) + (isUrban ? 10 : -5), // Urban trips are longer
+        distanceTraveled: 5 + (locationSeed % 25) + (isUrban ? 5 : -2) // Urban trips cover more distance
+      };
+    } else {
+      // Fallback to random metrics if no location provided
+      mockMetrics = {
+        hardBrakes: Math.floor(Math.random() * 5),
+        smoothAcceleration: 3 + Math.random() * 2,
+        speedCompliance: Math.floor(Math.random() * 8),
+        laneDiscipline: Math.floor(Math.random() * 4),
+        followingDistance: 1 + Math.random() * 3,
+        distractionLevel: Math.floor(Math.random() * 5),
+        tripDuration: 15 + Math.random() * 45,
+        distanceTraveled: 5 + Math.random() * 25
+      };
+    }
 
     const scoreData = calculateDriverScore(mockMetrics);
 
