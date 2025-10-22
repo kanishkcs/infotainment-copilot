@@ -63,6 +63,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isQueryLoading, setIsQueryLoading] = useState(false);
   const [queryResponse, setQueryResponse] = useState<string | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(null);
   const { isSupported, isListening, transcript, error, start, stop } = useSpeechRecognition();
 
   useEffect(() => {
@@ -71,13 +72,37 @@ export default function DashboardPage() {
     }
   }, [transcript]);
 
+  // Get user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ lat: latitude, lng: longitude });
+        },
+        (error) => {
+          console.warn("Geolocation error:", error);
+          // Fallback to San Francisco
+          setCurrentLocation({ lat: 37.7749, lng: -122.4194 });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
+        }
+      );
+    } else {
+      // Fallback to San Francisco
+      setCurrentLocation({ lat: 37.7749, lng: -122.4194 });
+    }
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [contextRes, scoreRes, trafficRes] = await Promise.all([
+        const [contextRes, scoreRes] = await Promise.all([
           fetch("/api/context"),
-          fetch("/api/driver-score"),
-          fetch("/api/traffic?lat=37.7749&lon=-122.4194") // Default to SF for demo
+          fetch("/api/driver-score")
         ]);
         
         if (contextRes.ok) {
@@ -93,11 +118,6 @@ export default function DashboardPage() {
             setDriverScore(scoreData.data);
           }
         }
-        
-        if (trafficRes.ok) {
-          const trafficData = await trafficRes.json();
-          setTrafficInfo(trafficData);
-        }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -107,6 +127,25 @@ export default function DashboardPage() {
     
     fetchData();
   }, []);
+
+  // Fetch traffic data when location changes
+  useEffect(() => {
+    if (currentLocation) {
+      const fetchTrafficData = async () => {
+        try {
+          const trafficRes = await fetch(`/api/traffic?lat=${currentLocation.lat}&lon=${currentLocation.lng}`);
+          if (trafficRes.ok) {
+            const trafficData = await trafficRes.json();
+            setTrafficInfo(trafficData);
+          }
+        } catch (error) {
+          console.error("Failed to fetch traffic data:", error);
+        }
+      };
+      
+      fetchTrafficData();
+    }
+  }, [currentLocation]);
 
   const getAQIColor = (aqi: number) => {
     if (aqi <= 50) return "text-green-400";
@@ -152,17 +191,17 @@ export default function DashboardPage() {
   };
 
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-120px)] p-8">
+    <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full p-8">
       {/* Left Column: Map */}
       <div className="lg:col-span-2 h-full glass-card p-4 overflow-hidden">
-        <Map />
+        <Map onLocationChange={setCurrentLocation} />
       </div>
 
       {/* Right Column: Widgets */}
       <div className="flex flex-col gap-6 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
         
         {/* AI Assistant Card */}
-        <div className="glass-card-hover">
+        <div className="glass-card-hover p-4">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-xl">
               <Sparkles className="w-5 h-5 text-blue-400" />

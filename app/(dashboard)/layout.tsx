@@ -8,7 +8,7 @@ export default function DashboardLayout({
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-grow container max-w-7xl mx-auto py-6">
+      <main className="p-6">
         {children}
       </main>
     </div>

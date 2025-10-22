@@ -4,7 +4,11 @@ import tt from "@tomtom-international/web-sdk-maps";
 import "@tomtom-international/web-sdk-maps/dist/maps.css";
 import { Search, MapPin, Navigation } from "lucide-react";
 
-const Map = () => {
+interface MapProps {
+  onLocationChange?: (location: {lat: number, lng: number}) => void;
+}
+
+const Map = ({ onLocationChange }: MapProps) => {
   const mapElement = useRef<HTMLDivElement | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [trafficData, setTrafficData] = useState<any>(null);
@@ -20,12 +24,16 @@ const Map = () => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          setUserLocation({ lat: latitude, lng: longitude });
+          const location = { lat: latitude, lng: longitude };
+          setUserLocation(location);
+          onLocationChange?.(location);
         },
         (error) => {
           console.warn("Geolocation error:", error);
           // Fallback to San Francisco
-          setUserLocation({ lat: 37.7749, lng: -122.4194 });
+          const fallbackLocation = { lat: 37.7749, lng: -122.4194 };
+          setUserLocation(fallbackLocation);
+          onLocationChange?.(fallbackLocation);
         },
         {
           enableHighAccuracy: true,
@@ -35,9 +43,11 @@ const Map = () => {
       );
     } else {
       // Fallback to San Francisco
-      setUserLocation({ lat: 37.7749, lng: -122.4194 });
+      const fallbackLocation = { lat: 37.7749, lng: -122.4194 };
+      setUserLocation(fallbackLocation);
+      onLocationChange?.(fallbackLocation);
     }
-  }, []);
+  }, [onLocationChange]);
 
   // Fetch traffic data when location is available
   useEffect(() => {
@@ -74,9 +84,12 @@ const Map = () => {
   // Handle location selection
   const handleLocationSelect = (result: any) => {
     const { lat, lon } = result.position;
+    const newLocation = { lat, lng: lon };
     setSelectedLocation(result);
     setSearchResults([]);
     setSearchQuery(result.address.freeformAddress);
+    setUserLocation(newLocation);
+    onLocationChange?.(newLocation);
     
     if (map) {
       map.setCenter([lon, lat]);
@@ -134,7 +147,9 @@ const Map = () => {
       // Add click handler for map
       mapInstance.on('click', (e: any) => {
         const { lng, lat } = e.lngLat;
-        setUserLocation({ lat, lng });
+        const newLocation = { lat, lng };
+        setUserLocation(newLocation);
+        onLocationChange?.(newLocation);
         
         // Add click marker
         new tt.Marker({ color: '#10b981' })
