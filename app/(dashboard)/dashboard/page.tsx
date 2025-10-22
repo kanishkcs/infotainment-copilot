@@ -23,9 +23,31 @@ type LiveContext = {
   uv: { index: number };
 };
 
+type DriverScore = {
+  overallScore: number;
+  breakdown: {
+    safety: number;
+    efficiency: number;
+    comfort: number;
+  };
+  recommendations: string[];
+  metrics: {
+    hardBrakes: number;
+    smoothAcceleration: number;
+    speedCompliance: number;
+    laneDiscipline: number;
+    followingDistance: number;
+    distractionLevel: number;
+    tripDuration: number;
+    distanceTraveled: number;
+  };
+  lastUpdated: string;
+};
+
 export default function DashboardPage() {
   const [prompt, setPrompt] = useState("Suggest a 5-minute tech podcast");
   const [liveContext, setLiveContext] = useState<LiveContext | null>(null);
+  const [driverScore, setDriverScore] = useState<DriverScore | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isQueryLoading, setIsQueryLoading] = useState(false);
   const [queryResponse, setQueryResponse] = useState<string | null>(null);
@@ -38,14 +60,34 @@ export default function DashboardPage() {
   }, [transcript]);
 
   useEffect(() => {
-    fetch("/api/context")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.ok) {
-          setLiveContext(data.data);
+    const fetchData = async () => {
+      try {
+        const [contextRes, scoreRes] = await Promise.all([
+          fetch("/api/context"),
+          fetch("/api/driver-score")
+        ]);
+        
+        if (contextRes.ok) {
+          const contextData = await contextRes.json();
+          if (contextData.ok) {
+            setLiveContext(contextData.data);
+          }
         }
-      })
-      .finally(() => setIsLoading(false));
+        
+        if (scoreRes.ok) {
+          const scoreData = await scoreRes.json();
+          if (scoreData.success) {
+            setDriverScore(scoreData.data);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
   }, []);
 
   const getAQIColor = (aqi: number) => {
@@ -253,22 +295,81 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="relative">
-              <div className="text-6xl font-bold text-center bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
-                100
+            {isLoading ? (
+              <div className="space-y-4">
+                <div className="skeleton h-16 w-full" />
+                <div className="skeleton h-12 w-full" />
+                <div className="skeleton h-12 w-full" />
               </div>
-              <p className="text-center text-white/50 text-sm mt-1">/100</p>
-            </div>
-            <div className="mt-6 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-white/70">Hard Brakes</span>
-                <span className="font-semibold text-green-400">0</span>
+            ) : driverScore ? (
+              <>
+                <div className="relative">
+                  <div className={`text-6xl font-bold text-center bg-gradient-to-r ${
+                    driverScore.overallScore >= 90 ? 'from-green-400 to-emerald-500' :
+                    driverScore.overallScore >= 75 ? 'from-yellow-400 to-orange-400' :
+                    'from-red-400 to-pink-500'
+                  } bg-clip-text text-transparent`}>
+                    {driverScore.overallScore}
+                  </div>
+                  <p className="text-center text-white/50 text-sm mt-1">/100</p>
+                </div>
+                
+                <div className="mt-6 space-y-3">
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="text-center">
+                      <div className="text-green-400 font-semibold">{driverScore.breakdown.safety}</div>
+                      <div className="text-white/50">Safety</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-blue-400 font-semibold">{driverScore.breakdown.efficiency}</div>
+                      <div className="text-white/50">Efficiency</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-purple-400 font-semibold">{driverScore.breakdown.comfort}</div>
+                      <div className="text-white/50">Comfort</div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white/70">Hard Brakes</span>
+                      <span className={`font-semibold ${
+                        driverScore.metrics.hardBrakes === 0 ? 'text-green-400' :
+                        driverScore.metrics.hardBrakes <= 2 ? 'text-yellow-400' : 'text-red-400'
+                      }`}>
+                        {driverScore.metrics.hardBrakes}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white/70">Speed Compliance</span>
+                      <span className={`font-semibold ${
+                        driverScore.metrics.speedCompliance <= 2 ? 'text-green-400' :
+                        driverScore.metrics.speedCompliance <= 5 ? 'text-yellow-400' : 'text-red-400'
+                      }`}>
+                        {driverScore.metrics.speedCompliance} mph over
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white/70">Trip Duration</span>
+                      <span className="font-semibold text-blue-400">
+                        {Math.round(driverScore.metrics.tripDuration)} min
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {driverScore.recommendations.length > 0 && (
+                    <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                      <p className="text-xs text-blue-400 font-semibold mb-1">Recommendation:</p>
+                      <p className="text-xs text-white/80">{driverScore.recommendations[0]}</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="text-center text-white/50 py-8">
+                <p>Unable to load driver score</p>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-white/70">Smooth Driving</span>
-                <span className="font-semibold text-green-400">Perfect</span>
-              </div>
-            </div>
+            )}
           </CardContent>
         </div>
 

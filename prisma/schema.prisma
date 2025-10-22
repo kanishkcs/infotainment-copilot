@@ -17,6 +17,8 @@ model User {
   password      String? // For storing the hashed password
   accounts      Account[]
   sessions      Session[]
+  driverMetrics DriverMetrics[]
+  preferences   UserPreferences?
 }
 
 model Account {
@@ -51,4 +53,36 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model DriverMetrics {
+  id                String   @id @default(cuid())
+  userId            String
+  hardBrakes        Int      @default(0)
+  smoothAcceleration Float   @default(0)
+  speedCompliance   Int      @default(0)
+  laneDiscipline    Int      @default(0)
+  followingDistance Float    @default(0)
+  distractionLevel  Int      @default(0)
+  tripDuration      Float    @default(0)
+  distanceTraveled  Float    @default(0)
+  overallScore      Int      @default(0)
+  safetyScore       Int      @default(0)
+  efficiencyScore   Int      @default(0)
+  comfortScore      Int      @default(0)
+  recordedAt        DateTime @default(now())
+  
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, recordedAt])
+}
+
+model UserPreferences {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  likes       String[]
+  dislikes    String[]
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

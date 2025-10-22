@@ -13,41 +13,78 @@ export async function GET(request: Request) {
     const apiKey = process.env.TOMTOM_API_KEY;
     
     if (!apiKey) {
-      // Return mock traffic data when API key is not configured
-      const trafficLevels = ['Light', 'Moderate', 'Heavy'];
+      // Return enhanced mock traffic data when API key is not configured
+      const trafficLevels = ['Light', 'Moderate', 'Heavy', 'Severe'];
       const randomLevel = trafficLevels[Math.floor(Math.random() * trafficLevels.length)];
-      const randomDelay = Math.floor(Math.random() * 15) + 1;
+      const randomDelay = Math.floor(Math.random() * 25) + 1;
+      const confidence = Math.floor(Math.random() * 30) + 70; // 70-100% confidence
       
       return NextResponse.json({ 
         trafficLevel: randomLevel, 
-        travelDelayMinutes: randomDelay 
+        travelDelayMinutes: randomDelay,
+        confidence: confidence,
+        lastUpdated: new Date().toISOString(),
+        source: 'mock'
       });
     }
 
     const url = `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?point=${lat},${lon}&key=${apiKey}`;
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
 
       if (!response.ok) {
         const errorBody = await response.text();
         console.error(`TomTom API request failed with status: ${response.status}`, errorBody);
-        return NextResponse.json({ error: 'Failed to retrieve data from TomTom API.' }, { status: response.status });
+        
+        // Fallback to mock data on API failure
+        const trafficLevels = ['Light', 'Moderate', 'Heavy'];
+        const randomLevel = trafficLevels[Math.floor(Math.random() * trafficLevels.length)];
+        const randomDelay = Math.floor(Math.random() * 15) + 1;
+        
+        return NextResponse.json({ 
+          trafficLevel: randomLevel, 
+          travelDelayMinutes: randomDelay,
+          confidence: 50,
+          lastUpdated: new Date().toISOString(),
+          source: 'fallback'
+        });
       }
 
       const data = await response.json();
       const flowData = data.flowSegmentData;
 
       if (!flowData) {
-        return NextResponse.json({ trafficLevel: 'No Data', travelDelayMinutes: 0 });
+        return NextResponse.json({ 
+          trafficLevel: 'No Data', 
+          travelDelayMinutes: 0,
+          confidence: 0,
+          lastUpdated: new Date().toISOString(),
+          source: 'tomtom'
+        });
       }
 
       const freeFlowSpeed = flowData.freeFlowSpeed;
       const currentSpeed = flowData.currentSpeed;
+      const confidence = flowData.confidence || 85;
       
       let trafficLevel = 'Light';
-      if (currentSpeed < freeFlowSpeed * 0.4) trafficLevel = 'Heavy';
-      else if (currentSpeed < freeFlowSpeed * 0.7) trafficLevel = 'Moderate';
+      let severity = 1;
+      
+      if (currentSpeed < freeFlowSpeed * 0.3) {
+        trafficLevel = 'Severe';
+        severity = 4;
+      } else if (currentSpeed < freeFlowSpeed * 0.5) {
+        trafficLevel = 'Heavy';
+        severity = 3;
+      } else if (currentSpeed < freeFlowSpeed * 0.7) {
+        trafficLevel = 'Moderate';
+        severity = 2;
+      }
       
       const travelTime = flowData.length / currentSpeed;
       const freeFlowTime = flowData.length / freeFlowSpeed;
@@ -57,17 +94,38 @@ export async function GET(request: Request) {
       return NextResponse.json({
         trafficLevel,
         travelDelayMinutes: travelDelayMinutes > 0 ? travelDelayMinutes : 0,
+        confidence: Math.round(confidence),
+        severity,
+        currentSpeed: Math.round(currentSpeed),
+        freeFlowSpeed: Math.round(freeFlowSpeed),
+        lastUpdated: new Date().toISOString(),
+        source: 'tomtom'
       });
 
     } catch (error: any) {
       console.error('Internal server error in traffic API route:', error);
-      return NextResponse.json({ error: 'Internal server error fetching traffic data' }, { status: 500 });
+      
+      // Fallback to mock data on error
+      const trafficLevels = ['Light', 'Moderate', 'Heavy'];
+      const randomLevel = trafficLevels[Math.floor(Math.random() * trafficLevels.length)];
+      const randomDelay = Math.floor(Math.random() * 15) + 1;
+      
+      return NextResponse.json({ 
+        trafficLevel: randomLevel, 
+        travelDelayMinutes: randomDelay,
+        confidence: 30,
+        lastUpdated: new Date().toISOString(),
+        source: 'fallback'
+      });
     }
   } catch (error: any) {
     console.error('Traffic API error:', error);
     return NextResponse.json({ 
       trafficLevel: 'Unknown', 
-      travelDelayMinutes: 0 
+      travelDelayMinutes: 0,
+      confidence: 0,
+      lastUpdated: new Date().toISOString(),
+      source: 'error'
     });
   }
 }

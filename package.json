@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "node migrate.js",
+    "db:reset": "prisma db push --force-reset",
+    "setup": "npm install && npm run db:generate && npm run db:push && npm run db:migrate"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.4.1",
