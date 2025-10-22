@@ -44,10 +44,22 @@ type DriverScore = {
   lastUpdated: string;
 };
 
+type TrafficInfo = {
+  trafficLevel: string;
+  travelDelayMinutes: number;
+  confidence: number;
+  severity: number;
+  currentSpeed: number;
+  freeFlowSpeed: number;
+  lastUpdated: string;
+  source: string;
+};
+
 export default function DashboardPage() {
   const [prompt, setPrompt] = useState("Suggest a 5-minute tech podcast");
   const [liveContext, setLiveContext] = useState<LiveContext | null>(null);
   const [driverScore, setDriverScore] = useState<DriverScore | null>(null);
+  const [trafficInfo, setTrafficInfo] = useState<TrafficInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isQueryLoading, setIsQueryLoading] = useState(false);
   const [queryResponse, setQueryResponse] = useState<string | null>(null);
@@ -62,9 +74,10 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [contextRes, scoreRes] = await Promise.all([
+        const [contextRes, scoreRes, trafficRes] = await Promise.all([
           fetch("/api/context"),
-          fetch("/api/driver-score")
+          fetch("/api/driver-score"),
+          fetch("/api/traffic?lat=37.7749&lon=-122.4194") // Default to SF for demo
         ]);
         
         if (contextRes.ok) {
@@ -79,6 +92,11 @@ export default function DashboardPage() {
           if (scoreData.success) {
             setDriverScore(scoreData.data);
           }
+        }
+        
+        if (trafficRes.ok) {
+          const trafficData = await trafficRes.json();
+          setTrafficInfo(trafficData);
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -134,14 +152,14 @@ export default function DashboardPage() {
   };
 
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-100px)] p-6">
+    <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-120px)] p-8">
       {/* Left Column: Map */}
-      <div className="lg:col-span-2 h-full glass-card p-2 overflow-hidden">
+      <div className="lg:col-span-2 h-full glass-card p-4 overflow-hidden">
         <Map />
       </div>
 
       {/* Right Column: Widgets */}
-      <div className="flex flex-col gap-4 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+      <div className="flex flex-col gap-6 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
         
         {/* AI Assistant Card */}
         <div className="glass-card-hover">
@@ -158,6 +176,7 @@ export default function DashboardPage() {
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Ask me anything..."
               className="input-glass resize-none"
+              style={{ minHeight: '80px', padding: '18px 24px' }}
             />
             <div className="flex gap-3">
               <button 
@@ -368,6 +387,90 @@ export default function DashboardPage() {
             ) : (
               <div className="text-center text-white/50 py-8">
                 <p>Unable to load driver score</p>
+              </div>
+            )}
+          </CardContent>
+        </div>
+
+        {/* Traffic Details Card */}
+        <div className="glass-card-hover">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Activity className="w-5 h-5 text-red-400" />
+              Traffic Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-4">
+                <div className="skeleton h-16 w-full" />
+                <div className="skeleton h-12 w-full" />
+                <div className="skeleton h-12 w-full" />
+              </div>
+            ) : trafficInfo ? (
+              <>
+                <div className="space-y-4">
+                  <div className="metric-card">
+                    <div className="p-3 bg-red-500/20 rounded-xl">
+                      <Activity className="w-6 h-6 text-red-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-white/60">Traffic Level</p>
+                      <p className={`text-2xl font-bold ${
+                        trafficInfo.trafficLevel === 'Light' ? 'text-green-400' :
+                        trafficInfo.trafficLevel === 'Moderate' ? 'text-yellow-400' :
+                        trafficInfo.trafficLevel === 'Heavy' ? 'text-orange-400' :
+                        'text-red-400'
+                      }`}>
+                        {trafficInfo.trafficLevel}
+                      </p>
+                      <p className="text-xs text-white/50">Severity: {trafficInfo.severity}/4</p>
+                    </div>
+                  </div>
+
+                  <div className="metric-card">
+                    <div className="p-3 bg-orange-500/20 rounded-xl">
+                      <Navigation className="w-6 h-6 text-orange-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-white/60">Travel Delay</p>
+                      <p className="text-2xl font-bold text-orange-400">
+                        {trafficInfo.travelDelayMinutes} min
+                      </p>
+                      <p className="text-xs text-white/50">Additional time</p>
+                    </div>
+                  </div>
+
+                  <div className="metric-card">
+                    <div className="p-3 bg-blue-500/20 rounded-xl">
+                      <Activity className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-white/60">Current Speed</p>
+                      <p className="text-2xl font-bold text-blue-400">
+                        {trafficInfo.currentSpeed} km/h
+                      </p>
+                      <p className="text-xs text-white/50">Free flow: {trafficInfo.freeFlowSpeed} km/h</p>
+                    </div>
+                  </div>
+
+                  <div className="metric-card">
+                    <div className="p-3 bg-purple-500/20 rounded-xl">
+                      <Activity className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-white/60">Data Confidence</p>
+                      <p className="text-2xl font-bold text-purple-400">
+                        {trafficInfo.confidence}%
+                      </p>
+                      <p className="text-xs text-white/50">Source: {trafficInfo.source}</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center text-white/50 py-8">
+                <p>Unable to load traffic data</p>
               </div>
             )}
           </CardContent>

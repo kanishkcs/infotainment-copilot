@@ -50,45 +50,49 @@ export default function SignInPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="glass-card p-8 w-full max-w-md">
-        <div className="text-center mb-8">
+      <div className="glass-card p-12 w-full max-w-md">
+        <div className="text-center mb-12">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             Welcome Back
           </h1>
-          <p className="text-white/60 mt-2">Sign in to your account</p>
+          <p className="text-white/60 mt-3">Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="form-group">
+            <label htmlFor="email" className="form-label">
               Email
             </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="input-glass w-full"
-              placeholder="your@email.com"
-              disabled={isLoading}
-            />
+            <div className="form-input-wrapper">
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="input-glass w-full"
+                placeholder="your@email.com"
+                disabled={isLoading}
+              />
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-2">
+          <div className="form-group">
+            <label htmlFor="password" className="form-label">
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="input-glass w-full"
-              placeholder="••••••••"
-              disabled={isLoading}
-            />
+            <div className="form-input-wrapper">
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="input-glass w-full"
+                placeholder="••••••••"
+                disabled={isLoading}
+              />
+            </div>
           </div>
 
           {success && (
@@ -119,7 +123,7 @@ export default function SignInPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-white/50 mt-6">
+        <p className="text-center text-sm text-white/50 mt-8">
           Don't have an account?{" "}
           <a href="/sign-up" className="text-blue-400 hover:underline">
             Sign up

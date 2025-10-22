@@ -287,6 +287,7 @@ export default function ChatPage() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Ask anything..."
               className="input-glass text-lg"
+              style={{ minHeight: '60px', padding: '20px 24px' }}
             />
             
             <div className="grid grid-cols-3 gap-3">
@@ -294,6 +295,7 @@ export default function ChatPage() {
                 value={timeOfDay}
                 onChange={(e) => setTimeOfDay(e.target.value)}
                 className="input-glass"
+                style={{ minHeight: '56px', padding: '16px 20px' }}
               >
                 <option value="morning">🌅 Morning</option>
                 <option value="afternoon">☀️ Afternoon</option>
@@ -304,6 +306,7 @@ export default function ChatPage() {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 className="input-glass"
+                style={{ minHeight: '56px', padding: '16px 20px' }}
               >
                 <option value="city">🏙️ City</option>
                 <option value="highway">🛣️ Highway</option>
@@ -314,6 +317,7 @@ export default function ChatPage() {
                 value={duration}
                 onChange={(e) => setDuration(parseInt(e.target.value, 10))}
                 className="input-glass"
+                style={{ minHeight: '56px', padding: '16px 20px' }}
               >
                 <option value={5}>⏱️ 5 min</option>
                 <option value={15}>⏱️ 15 min</option>

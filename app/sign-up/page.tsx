@@ -63,79 +63,87 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="glass-card p-8 w-full max-w-md">
-        <div className="text-center mb-8">
+      <div className="glass-card p-12 w-full max-w-md">
+        <div className="text-center mb-12">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             Create Account
           </h1>
-          <p className="text-white/60 mt-2">Sign up for your account</p>
+          <p className="text-white/60 mt-3">Sign up for your account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-2">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="form-group">
+            <label htmlFor="name" className="form-label">
               Full Name
             </label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="input-glass w-full"
-              placeholder="John Doe"
-              disabled={isLoading}
-            />
+            <div className="form-input-wrapper">
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="input-glass w-full"
+                placeholder="John Doe"
+                disabled={isLoading}
+              />
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
+          <div className="form-group">
+            <label htmlFor="email" className="form-label">
               Email
             </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="input-glass w-full"
-              placeholder="your@email.com"
-              disabled={isLoading}
-            />
+            <div className="form-input-wrapper">
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="input-glass w-full"
+                placeholder="your@email.com"
+                disabled={isLoading}
+              />
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-2">
+          <div className="form-group">
+            <label htmlFor="password" className="form-label">
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="input-glass w-full"
-              placeholder="••••••••"
-              disabled={isLoading}
-              minLength={6}
-            />
+            <div className="form-input-wrapper">
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="input-glass w-full"
+                placeholder="••••••••"
+                disabled={isLoading}
+                minLength={6}
+              />
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+          <div className="form-group">
+            <label htmlFor="confirmPassword" className="form-label">
               Confirm Password
             </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="input-glass w-full"
-              placeholder="••••••••"
-              disabled={isLoading}
-              minLength={6}
-            />
+            <div className="form-input-wrapper">
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="input-glass w-full"
+                placeholder="••••••••"
+                disabled={isLoading}
+                minLength={6}
+              />
+            </div>
           </div>
 
           {error && (
@@ -160,7 +168,7 @@ export default function SignUpPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-white/50 mt-6">
+        <p className="text-center text-sm text-white/50 mt-8">
           Already have an account?{" "}
           <a href="/sign-in" className="text-blue-400 hover:underline">
             Sign in
